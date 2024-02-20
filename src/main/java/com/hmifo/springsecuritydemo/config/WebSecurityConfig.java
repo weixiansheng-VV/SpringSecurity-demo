@@ -6,6 +6,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 /**
  * @author 54220
  */
@@ -19,15 +21,37 @@ public class WebSecurityConfig {
         //anyRequest()：对所有请求开启授权保护
         //authenticated()：已认证请求会自动被授权
         http.authorizeRequests(
-                        authorize -> authorize
-                                .anyRequest()
-                                .authenticated()
-                )
+                authorize -> authorize
+                        .anyRequest()
+                        .authenticated()
+        );
 //                .formLogin(withDefaults());//表单授权方式
-                .formLogin(form -> {
-                    form.loginPage("/login").permitAll();//无需授权即可访问当前页面
-                });
 //                .httpBasic(withDefaults());//基本授权方式
+
+        http.formLogin(form -> {
+            form.loginPage("/login").permitAll()//无需授权即可访问当前页面
+                    .usernameParameter("myusername") //配置自定义的表单用户名参数，默认值是username
+                    .passwordParameter("mypassword") //配置自定义的表单密码参数，默认值是password
+                    .failureUrl("/login?failure") // 校验失败时跳转的地址，默认值是error
+                    .successHandler(new MyAuthenticationSuccessHandler())// 认证成功时的处理
+                    .failureHandler(new MyAuthenticationFailureHandler())// 认证失败时的处理
+            ;
+        });
+
+        http.logout(logout -> {
+            logout.logoutSuccessHandler(new MyLogoutSuccessHandler());// 注销成功时的处理
+        });
+
+        http.exceptionHandling(exception -> {
+            exception.authenticationEntryPoint(new MyAuthenticationEntryPoint());
+        });
+
+        http.sessionManagement(session -> {
+            session.maximumSessions(1).expiredSessionStrategy(new MySessionInformationExpiredStrategy());
+        });
+        //跨域
+        http.cors(withDefaults());
+
         //关闭csrf攻击防御
         http.csrf(csrf -> csrf.disable());
 
