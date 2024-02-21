@@ -7,7 +7,8 @@
 <h1>登录</h1>
 <!--当参数名出现failure时，会显示错误的用户名和密码.-->
 <div th:if="${param.failure}">
-    错误的用户名和密码.</div>
+    错误的用户名和密码.
+</div>
 
 <!--method必须为"post"-->
 <!--th:action="@{/login}" ，
@@ -22,7 +23,7 @@ login: 和登录页面保持一致即可，SpringSecurity自动进行登录认�
         <!--name必须为"password"-->
         <input type="password" name="mypassword" placeholder="密码"/>
     </div>
-    <input type="submit" value="登录" />
+    <input type="submit" value="登录"/>
 </form>
 </body>
 </html>

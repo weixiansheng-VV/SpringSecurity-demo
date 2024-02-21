@@ -4,15 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hmifo.springsecuritydemo.entity.User;
 import com.hmifo.springsecuritydemo.mapper.UserMapper;
 import jakarta.annotation.Resource;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * @author 54220
@@ -77,16 +73,27 @@ public class DBUserDetailsManager implements UserDetailsManager, UserDetailsPass
         if (user == null) {
             throw new UsernameNotFoundException(username);
         } else {
-            Collection<? extends GrantedAuthority> authorities = new ArrayList<>();
+/*            Collection<GrantedAuthority> authorities = new ArrayList<>();
+//            authorities.add(() -> "USER_LIST");
+//            authorities.add(() -> "USER_ADD");
             return new org.springframework.security.core.userdetails.User(
                     user.getUsername(),
                     user.getPassword(),
                     user.getEnabled(),
-                    true, //用户账号是否过期
-                    true, //用户凭证是否过期
+                    true, //用户账号是否未过期
+                    true, //用户凭证是否未过期
                     true, //用户是否未被锁定
                     authorities //权限列表
-            );
+            );*/
+            return org.springframework.security.core.userdetails.User
+                    .withUsername(user.getUsername())
+                    .password(user.getPassword())
+                    .disabled(!user.getEnabled()) //账号是否过期
+                    .credentialsExpired(false) //凭证是否过期
+                    .accountExpired(false) //账号是否被锁定
+                    .roles("ADMIN")
+                    .authorities("USER_ADD","USER_UPDATE")
+                    .build();
         }
     }
 }

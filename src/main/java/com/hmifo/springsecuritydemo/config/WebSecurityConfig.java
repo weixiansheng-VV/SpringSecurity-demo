@@ -1,10 +1,14 @@
 package com.hmifo.springsecuritydemo.config;
 
+import com.alibaba.fastjson2.JSON;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.HashMap;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -12,7 +16,8 @@ import static org.springframework.security.config.Customizer.withDefaults;
  * @author 54220
  */
 @Configuration
-@EnableWebSecurity//Spring项目总需要添加此注解，SpringBoot项目中不需要
+@EnableWebSecurity// Spring项目总需要添加此注解，SpringBoot项目中不需要
+@EnableMethodSecurity // 开启基于方法的授权
 public class WebSecurityConfig {
 
     @Bean
@@ -22,6 +27,12 @@ public class WebSecurityConfig {
         //authenticated()：已认证请求会自动被授权
         http.authorizeRequests(
                 authorize -> authorize
+/*                      基于用户的权限配置
+                        //具有USER_LIST权限的用户可以访问/user/list
+                        .requestMatchers("/user/list").hasAuthority("USER_LIST")
+                        //具有USER_ADD权限的用户可以访问/user/add
+                        .requestMatchers("/user/add").hasAuthority("USER_ADD")*/
+//                        .requestMatchers("/user/**").hasRole("ADMIN")
                         .anyRequest()
                         .authenticated()
         );
@@ -38,17 +49,53 @@ public class WebSecurityConfig {
             ;
         });
 
+        // 注销成功时的处理
         http.logout(logout -> {
-            logout.logoutSuccessHandler(new MyLogoutSuccessHandler());// 注销成功时的处理
+            logout.logoutSuccessHandler(new MyLogoutSuccessHandler());
         });
 
+        // 请求未认证的接口
         http.exceptionHandling(exception -> {
             exception.authenticationEntryPoint(new MyAuthenticationEntryPoint());
+//            exception.accessDeniedHandler(new MyAccessDeniedHandler());
+            //匿名内部类
+            /*exception.accessDeniedHandler(new AccessDeniedHandler() {
+                @Override
+                public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+                    //创建结果对象
+                    HashMap result = new HashMap();
+                    result.put("code", -1);
+                    result.put("message", "没有权限");
+
+                    //转换成json字符串
+                    String json = JSON.toJSONString(result);
+
+                    //返回响应
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().println(json);
+                }
+            });*/
+            //lambda表达式
+            exception.accessDeniedHandler((request, response, accessDeniedException) -> {
+                //创建结果对象
+                HashMap result = new HashMap();
+                result.put("code", -1);
+                result.put("message", "没有权限");
+
+                //转换成json字符串
+                String json = JSON.toJSONString(result);
+
+                //返回响应
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().println(json);
+            });
         });
 
+        //会话管理
         http.sessionManagement(session -> {
             session.maximumSessions(1).expiredSessionStrategy(new MySessionInformationExpiredStrategy());
         });
+
         //跨域
         http.cors(withDefaults());
 
